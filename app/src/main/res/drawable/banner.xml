@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path android:fillColor="#1565C0" android:pathData="M0,0h320v180h-320z" />
+    <!-- seis botones de colores, como la pantalla de la app -->
+    <path android:fillColor="#1E88E5" android:pathData="M40,40h70v45h-70z" />
+    <path android:fillColor="#C62828" android:pathData="M125,40h70v45h-70z" />
+    <path android:fillColor="#F9A825" android:pathData="M210,40h70v45h-70z" />
+    <path android:fillColor="#2E7D32" android:pathData="M40,95h70v45h-70z" />
+    <path android:fillColor="#EF6C00" android:pathData="M125,95h70v45h-70z" />
+    <path android:fillColor="#6A1B9A" android:pathData="M210,95h70v45h-70z" />
+</vector>
