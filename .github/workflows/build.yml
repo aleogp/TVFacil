@@ -19,10 +19,19 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+
+      - name: Poner las VPN (desde los secrets)
+        env:
+          WG_COLOMBIA: ${{ secrets.WG_COLOMBIA }}
+          WG_MEXICO: ${{ secrets.WG_MEXICO }}
+        run: |
+          mkdir -p app/src/main/assets/vpn
+          if [ -n "$WG_COLOMBIA" ]; then printf '%s\n' "$WG_COLOMBIA" > app/src/main/assets/vpn/colombia.conf; fi
+          if [ -n "$WG_MEXICO" ]; then printf '%s\n' "$WG_MEXICO" > app/src/main/assets/vpn/mexico.conf; fi
+          echo "VPN incluidas:"; ls app/src/main/assets/vpn
 
       - name: Compilar
         run: gradle :app:assembleRelease --no-daemon --stacktrace
@@ -33,7 +42,7 @@ jobs:
       - name: Publicar versión descargable
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.${{ github.run_number }}
-          name: TV Fácil v1.${{ github.run_number }}
+          tag_name: v2.${{ github.run_number }}
+          name: TV Fácil v2.${{ github.run_number }}
           files: TVFacil.apk
           make_latest: true
