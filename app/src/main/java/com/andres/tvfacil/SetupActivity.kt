@@ -21,8 +21,8 @@ class SetupActivity : Activity() {
 
     private val headerRows = listOf(
         "➕  Agregar botón",
-        "🔐  Dar permiso para controlar WireGuard",
-        "🛡  Abrir WireGuard",
+        "🔐  Aceptar permiso de VPN (una sola vez)",
+        "🛡  Ver qué VPN trae la app",
         "↩  Restaurar botones originales",
         "✅  Listo (volver)"
     )
@@ -68,14 +68,22 @@ class SetupActivity : Activity() {
                 save(); editButton(buttons.size - 1)
             }
             1 -> {
-                if (!Wg.installed(this)) toast("Primero instala WireGuard")
-                else if (Wg.hasPermission(this)) toast("El permiso ya está dado ✔")
-                else if (Build.VERSION.SDK_INT >= 23) requestPermissions(arrayOf(Wg.PERM), 7)
+                val perm = Vpn.permissionIntent(this)
+                if (perm == null) toast("El permiso ya está dado ✔")
+                else startActivityForResult(perm, 5)
             }
             2 -> {
-                val i = packageManager.getLeanbackLaunchIntentForPackage(Wg.PKG)
-                    ?: packageManager.getLaunchIntentForPackage(Wg.PKG)
-                if (i != null) startActivity(i) else toast("WireGuard no está instalado")
+                val vpns = Vpn.available(this)
+                val actual = try { Vpn.current(this) } catch (e: Exception) { null }
+                AlertDialog.Builder(this)
+                    .setTitle("VPN dentro de la app")
+                    .setMessage(
+                        (if (vpns.isEmpty()) "⚠ No trae ninguna. Revisa los secrets en GitHub."
+                        else vpns.joinToString("\n") { "• $it" }) +
+                            "\n\nConectada ahora: ${actual ?: "ninguna"}"
+                    )
+                    .setPositiveButton("OK", null)
+                    .show()
             }
             3 -> confirm("¿Volver a los botones originales?") { Config.reset(this); refresh() }
             4 -> finish()
@@ -130,10 +138,10 @@ class SetupActivity : Activity() {
     }
 
     private fun pickTunnel(b: TvButton, i: Int) {
-        val known = (Config.tunnels(buttons) + listOf("colombia", "mexico", "usa")).distinct()
+        val known = Vpn.available(this)
         val items = listOf("Sin VPN") + known + listOf("Otro nombre…")
         AlertDialog.Builder(this)
-            .setTitle("VPN (debe llamarse IGUAL que el túnel en WireGuard)")
+            .setTitle("¿Qué VPN usa este botón?")
             .setItems(items.toTypedArray()) { _, w ->
                 when (w) {
                     0 -> { b.tunnel = ""; saveAndReopen(i) }

@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permiso para encender/apagar túneles de la app WireGuard -->
-    <uses-permission android:name="com.wireguard.android.permission.CONTROL_TUNNELS" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- Para listar las apps instaladas en la pantalla de configuración -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
@@ -10,7 +9,6 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
     <queries>
-        <package android:name="com.wireguard.android" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
         </intent>
@@ -39,5 +37,15 @@
             android:name=".SetupActivity"
             android:exported="false"
             android:screenOrientation="landscape" />
+
+        <!-- Servicio VPN de WireGuard integrado -->
+        <service
+            android:name="com.wireguard.android.backend.GoBackend$VpnService"
+            android:exported="false"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

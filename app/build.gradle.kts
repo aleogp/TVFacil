@@ -11,8 +11,8 @@ android {
         applicationId = "com.andres.tvfacil"
         minSdk = 22
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "2.0"
     }
 
     // Llave fija: así cada APK nuevo se instala encima del anterior sin desinstalar.
@@ -38,6 +38,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "17"
@@ -46,4 +47,10 @@ android {
         abortOnError = false
         checkReleaseBuilds = false
     }
+}
+
+dependencies {
+    // WireGuard oficial (solo el motor de túnel, sin la app)
+    implementation("com.wireguard.android:tunnel:1.0.20230706")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

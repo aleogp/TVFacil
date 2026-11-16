@@ -84,7 +84,6 @@ class MainActivity : Activity() {
         super.onResume()
         buttons = Config.load(this)
         buildGrid()
-        askWireGuardPermissionIfNeeded()
     }
 
     override fun onPause() {
@@ -206,12 +205,20 @@ class MainActivity : Activity() {
             return
         }
         val tunnel = b.tunnel.trim()
-        val all = Config.tunnels(buttons)
-        val wgReady = Wg.installed(this) && Wg.hasPermission(this)
 
-        if (tunnel.isNotEmpty() && !wgReady) {
-            showMessage("Falta configurar la VPN.\n\nLlamen a Andrés 📞\n\n(Aprieten OK para volver)")
+        if (tunnel.isNotEmpty() && tunnel !in Vpn.available(this)) {
+            showMessage("Falta la VPN \"$tunnel\" en la app.\n\nLlamen a Andrés 📞\n\n(Aprieten OK para volver)")
             return
+        }
+        if (tunnel.isNotEmpty()) {
+            val perm = Vpn.permissionIntent(this)
+            if (perm != null) {
+                // Aviso de Android que se acepta una sola vez
+                pendingIndex = buttons.indexOf(b)
+                pendingRetry = retry
+                startActivityForResult(perm, REQ_VPN)
+                return
+            }
         }
 
         mode = Mode.BUSY
@@ -221,21 +228,47 @@ class MainActivity : Activity() {
             else "⏳\n\nAbriendo ${b.label}…"
         )
 
-        var delay = 0L
-        if (wgReady && all.isNotEmpty()) {
-            Wg.allDown(this, all)
-            delay += if (retry) 2500 else 1500
-        }
-        if (tunnel.isNotEmpty()) {
-            handler.postDelayed({ Wg.setTunnel(this, tunnel, true) }, delay)
-            delay += if (retry) 8000 else 5000
-        }
-        handler.postDelayed({
-            hideOverlay()
-            if (!launch(b.pkg)) {
-                showMessage("No encuentro la app de \"${b.label}\".\n\nLlamen a Andrés 📞\n\n(Aprieten OK para volver)")
+        val started = SystemClock.uptimeMillis()
+        Thread {
+            var error: Exception? = null
+            try {
+                if (retry) { Vpn.switchTo(this, null); Thread.sleep(1500) }
+                Vpn.switchTo(this, tunnel.ifEmpty { null })
+            } catch (e: Exception) {
+                error = e
             }
-        }, delay + 300)
+            // Dejamos que la conexión se asiente antes de abrir la app
+            val minWait = when {
+                tunnel.isEmpty() -> 800L
+                retry -> 5000L
+                else -> 3000L
+            }
+            val wait = (minWait - (SystemClock.uptimeMillis() - started)).coerceAtLeast(0)
+            handler.postDelayed({
+                hideOverlay()
+                if (error != null) {
+                    showMessage("No se pudo conectar la VPN.\n\nPrueben el botón 🔧 No funciona,\no llamen a Andrés 📞\n\n(Aprieten OK para volver)")
+                } else if (!launch(b.pkg)) {
+                    showMessage("No encuentro la app de \"${b.label}\".\n\nLlamen a Andrés 📞\n\n(Aprieten OK para volver)")
+                }
+            }, wait)
+        }.start()
+    }
+
+    private var pendingIndex = -1
+    private var pendingRetry = false
+
+    @Deprecated("Activity API")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQ_VPN) return
+        val b = buttons.getOrNull(pendingIndex)
+        pendingIndex = -1
+        if (resultCode == RESULT_OK && b != null) {
+            handler.post { runApp(b, pendingRetry) }
+        } else {
+            showMessage("Hay que aceptar el aviso de conexión\npara que funcione.\n\nVuelvan a intentarlo y elijan \"Aceptar\".\n\n(Aprieten OK para volver)")
+        }
     }
 
     private fun launch(pkg: String): Boolean {
@@ -304,11 +337,8 @@ class MainActivity : Activity() {
         startActivity(Intent(this, SetupActivity::class.java))
     }
 
-    private fun askWireGuardPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= 23 && Wg.installed(this) && !Wg.hasPermission(this) &&
-            Config.tunnels(buttons).isNotEmpty()) {
-            requestPermissions(arrayOf(Wg.PERM), 7)
-        }
+    companion object {
+        private const val REQ_VPN = 42
     }
 
     private fun isLight(c: Int): Boolean {

@@ -9,7 +9,7 @@ import org.json.JSONObject
  *  action = "app"     -> pone la VPN indicada (o ninguna) y abre la app [pkg]
  *  action = "retry"   -> repite el último botón con más tiempo de espera
  *  action = "reboot"  -> muestra cómo reiniciar el Fire Stick con el control
- *  tunnel = nombre EXACTO del túnel en WireGuard ("" = sin VPN)
+ *  tunnel = nombre de la VPN = archivo assets/vpn/<nombre>.conf ("" = sin VPN)
  */
 data class TvButton(
     var label: String,
