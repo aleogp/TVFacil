@@ -45,8 +45,8 @@ object Config {
     fun defaults(): MutableList<TvButton> = mutableListOf(
         TvButton("Disney y Fútbol", "⚽", 0xFF1E88E5, "app", "colombia", "com.disney.disneyplus"),
         TvButton("Netflix", "🎬", 0xFFC62828, "app", "", "com.netflix.ninja"),
-        TvButton("TV Colombia", "📺", 0xFFF9A825, "app", "colombia", ""),
-        TvButton("Canales", "📡", 0xFF2E7D32, "app", "mexico", ""),
+TvButton("TV Colombia", "📺", 0xFFF9A825, "app", "colombia", "com.directv.dtvlatam"),
+TvButton("Canales", "📡", 0xFF2E7D32, "app", "mexico", "com.kai.tv"),
         TvButton("No funciona", "🔧", 0xFFEF6C00, "retry"),
         TvButton("Llamar a Andrés", "📞", 0xFF6A1B9A, "app", "", "com.anydesk.anydeskandroid"),
         TvButton("Reiniciar", "🔄", 0xFF546E7A, "reboot")
