@@ -25,14 +25,14 @@ jobs:
 
       - name: Poner las VPN (desde los secrets)
         env:
-          SECRETS_JSON: ${{ toJSON(secrets) }}
+          WG_COLOMBIA: ${{ secrets.WG_COLOMBIA }}
+          WG_MEXICO: ${{ secrets.WG_MEXICO }}
+          WG_USA: ${{ secrets.WG_USA }}
         run: |
           mkdir -p app/src/main/assets/vpn
-          # Cada secret que empiece con WG_ se vuelve una VPN: WG_USA -> usa.conf
-          for k in $(echo "$SECRETS_JSON" | jq -r 'keys[] | select(startswith("WG_"))'); do
-            name=$(echo "${k#WG_}" | tr 'A-Z' 'a-z')
-            echo "$SECRETS_JSON" | jq -r --arg k "$k" '.[$k]' > "app/src/main/assets/vpn/$name.conf"
-          done
+          if [ -n "$WG_COLOMBIA" ]; then printf '%s\n' "$WG_COLOMBIA" > app/src/main/assets/vpn/colombia.conf; fi
+          if [ -n "$WG_MEXICO" ]; then printf '%s\n' "$WG_MEXICO" > app/src/main/assets/vpn/mexico.conf; fi
+          if [ -n "$WG_USA" ]; then printf '%s\n' "$WG_USA" > app/src/main/assets/vpn/usa.conf; fi
           echo "VPN incluidas:"; ls app/src/main/assets/vpn
 
       - name: Compilar
