@@ -50,6 +50,15 @@ object Vpn {
 
         val text = ctx.assets.open("vpn/$name.conf").bufferedReader().use { it.readText() }
             .replace("\r", "")
+            .lines().joinToString("\n") { line ->
+                // Si la configuración solo enruta IPv4, el tráfico IPv6 sale por la
+                // conexión normal (España) y apps como KAI detectan el país real.
+                // Enrutando ::/0 por el túnel (sin dirección IPv6) ese tráfico se bloquea
+                // y las apps usan IPv4, que sí sale por la VPN.
+                if (line.trim().startsWith("AllowedIPs", ignoreCase = true) && !line.contains("::/0"))
+                    line.trimEnd() + ", ::/0"
+                else line
+            }
         val cfg = Config.parse(BufferedReader(StringReader(text)))
         val t = tunnels.getOrPut(name) { SimpleTunnel(name) }
         b.setState(t, Tunnel.State.UP, cfg)

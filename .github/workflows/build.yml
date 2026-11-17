@@ -60,7 +60,7 @@ jobs:
       - name: Publicar versión descargable
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v6.${{ github.run_number }}
-          name: TV Fácil v6.${{ github.run_number }}
+          tag_name: v7.${{ github.run_number }}
+          name: TV Fácil v7.${{ github.run_number }}
           files: TVFacil.apk
           make_latest: true
