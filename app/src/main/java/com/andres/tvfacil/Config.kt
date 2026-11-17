@@ -45,8 +45,8 @@ object Config {
     fun defaults(): MutableList<TvButton> = mutableListOf(
         TvButton("Disney y Fútbol", "⚽", 0xFF1E88E5, "app", "colombia", "com.disney.disneyplus"),
         TvButton("Netflix", "🎬", 0xFFC62828, "app", "", "com.netflix.ninja"),
-TvButton("TV Colombia", "📺", 0xFFF9A825, "app", "colombia", "com.directv.dtvlatam"),
-TvButton("Canales", "📡", 0xFF2E7D32, "app", "mexico", "com.kai.tv"),
+        TvButton("TV Colombia", "📺", 0xFFF9A825, "app", "colombia", "com.directv.dtvlatam"),
+        TvButton("Canales", "📡", 0xFF2E7D32, "app", "usa", "com.kai.tv"),
         TvButton("No funciona", "🔧", 0xFFEF6C00, "retry"),
         TvButton("Llamar a Andrés", "📞", 0xFF6A1B9A, "app", "", "com.anydesk.anydeskandroid"),
         TvButton("Reiniciar", "🔄", 0xFF546E7A, "reboot")
@@ -56,12 +56,20 @@ TvButton("Canales", "📡", 0xFF2E7D32, "app", "mexico", "com.kai.tv"),
 
     fun load(ctx: Context): MutableList<TvButton> {
         val raw = prefs(ctx).getString(KEY_BUTTONS, null) ?: return defaults()
-        return try {
+        val list = try {
             val arr = JSONArray(raw)
             MutableList(arr.length()) { TvButton.fromJson(arr.getJSONObject(it)) }
         } catch (e: Exception) {
-            defaults()
+            return defaults()
         }
+        // v3: KAI pasa de México a EE. UU. (una sola vez, en aparatos ya configurados)
+        val p = prefs(ctx)
+        if (!p.getBoolean("migr_kai_usa", false)) {
+            list.filter { it.pkg == "com.kai.tv" && it.tunnel == "mexico" }.forEach { it.tunnel = "usa" }
+            save(ctx, list)
+            p.edit().putBoolean("migr_kai_usa", true).apply()
+        }
+        return list
     }
 
     fun save(ctx: Context, list: List<TvButton>) {

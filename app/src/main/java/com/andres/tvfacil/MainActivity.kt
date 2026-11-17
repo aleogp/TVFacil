@@ -249,7 +249,10 @@ class MainActivity : Activity() {
                 if (error != null) {
                     showMessage("No se pudo conectar la VPN.\n\nPrueben el botón 🔧 No funciona,\no llamen a Andrés 📞\n\n(Aprieten OK para volver)")
                 } else if (!launch(b.pkg)) {
-                    showMessage("No encuentro la app de \"${b.label}\".\n\nLlamen a Andrés 📞\n\n(Aprieten OK para volver)")
+                    // La app no está instalada: abrimos la tienda de Amazon en esa app
+                    if (!openStore(b.pkg)) {
+                        showMessage("No encuentro la app de \"${b.label}\".\n\nLlamen a Andrés 📞\n\n(Aprieten OK para volver)")
+                    }
                 }
             }, wait)
         }.start()
@@ -281,6 +284,21 @@ class MainActivity : Activity() {
         } catch (e: Exception) {
             false
         }
+    }
+
+    /** Abre la ficha de la app en la tienda (Amazon primero, luego Google Play). */
+    private fun openStore(pkg: String): Boolean {
+        val uris = listOf("amzn://apps/android?p=$pkg", "market://details?id=$pkg")
+        for (u in uris) {
+            try {
+                val i = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(u))
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(i)
+                return true
+            } catch (_: Exception) {
+            }
+        }
+        return false
     }
 
     // ---------- Mensajes en pantalla completa ----------

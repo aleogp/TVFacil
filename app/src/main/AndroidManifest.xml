@@ -16,8 +16,8 @@
 
     <application
         android:allowBackup="false"
-        android:banner="@drawable/banner"
-        android:icon="@drawable/ic_launcher"
+        android:banner="@drawable/banner_tvfacil"
+        android:icon="@drawable/ic_tvfacil"
         android:label="TV Fácil"
         android:theme="@android:style/Theme.Material.NoActionBar">
 
