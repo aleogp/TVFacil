@@ -39,6 +39,18 @@ jobs:
           if [ -n "$WG_USA" ]; then printf '%s\n' "$WG_USA" > app/src/main/assets/vpn/usa.conf; fi
           echo "VPN incluidas:"; ls app/src/main/assets/vpn
 
+      - name: Fotos de la familia (cifradas en fotos.enc)
+        env:
+          FOTOS_KEY: ${{ secrets.FOTOS_KEY }}
+        run: |
+          if [ -n "$FOTOS_KEY" ] && [ -f fotos.enc ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -in fotos.enc -out /tmp/fotos.tar.gz -pass env:FOTOS_KEY
+            tar -xzf /tmp/fotos.tar.gz -C app/src/main
+            echo "Fotos incluidas:"; ls app/src/main/assets/fotos
+          else
+            echo "Sin FOTOS_KEY: se usa el ícono normal, sin fotos"
+          fi
+
       - name: Compilar
         run: gradle :app:assembleRelease --no-daemon --stacktrace
 
@@ -48,7 +60,7 @@ jobs:
       - name: Publicar versión descargable
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v5.${{ github.run_number }}
-          name: TV Fácil v5.${{ github.run_number }}
+          tag_name: v6.${{ github.run_number }}
+          name: TV Fácil v6.${{ github.run_number }}
           files: TVFacil.apk
           make_latest: true

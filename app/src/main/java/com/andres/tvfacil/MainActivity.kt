@@ -2,7 +2,13 @@ package com.andres.tvfacil
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.BitmapShader
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
@@ -17,6 +23,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.GridLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 
@@ -26,6 +33,7 @@ class MainActivity : Activity() {
     private lateinit var root: FrameLayout
     private lateinit var grid: GridLayout
     private lateinit var overlay: TextView
+    private lateinit var photo: ImageView
     private var buttons: MutableList<TvButton> = mutableListOf()
     private val buttonViews = mutableListOf<View>()
 
@@ -52,10 +60,21 @@ class MainActivity : Activity() {
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 34f)
         title.typeface = Typeface.DEFAULT_BOLD
         title.gravity = Gravity.CENTER
-        title.setPadding(0, dp(18), 0, dp(10))
         // En celular (sin tecla Menú): mantener presionado el título abre la configuración.
         title.setOnLongClickListener { openSetup(); true }
-        column.addView(title)
+
+        // Encabezado: foto de la nieta (rota en cada visita) + título
+        val header = LinearLayout(this)
+        header.orientation = LinearLayout.HORIZONTAL
+        header.gravity = Gravity.CENTER
+        header.setPadding(0, dp(12), 0, dp(6))
+        photo = ImageView(this)
+        photo.visibility = View.GONE
+        val plp = LinearLayout.LayoutParams(dp(88), dp(88))
+        plp.rightMargin = dp(20)
+        header.addView(photo, plp)
+        header.addView(title)
+        column.addView(header)
 
         grid = GridLayout(this)
         column.addView(grid, LinearLayout.LayoutParams(
@@ -84,6 +103,7 @@ class MainActivity : Activity() {
         super.onResume()
         buttons = Config.load(this)
         buildGrid()
+        showNextPhoto()
     }
 
     override fun onPause() {
@@ -310,6 +330,42 @@ class MainActivity : Activity() {
             }
         }
         return false
+    }
+
+    // ---------- Foto de la nieta ----------
+
+    private fun showNextPhoto() {
+        val files = try {
+            (assets.list("fotos") ?: emptyArray()).filter { it.endsWith(".jpg") || it.endsWith(".png") }.sorted()
+        } catch (e: Exception) {
+            emptyList()
+        }
+        if (files.isEmpty()) { photo.visibility = View.GONE; return }
+        val prefs = getSharedPreferences("tvfacil", MODE_PRIVATE)
+        val i = (prefs.getInt("foto", -1) + 1) % files.size
+        prefs.edit().putInt("foto", i).apply()
+        val bmp = try {
+            assets.open("fotos/" + files[i]).use { BitmapFactory.decodeStream(it) }
+        } catch (e: Exception) {
+            null
+        } ?: return
+        photo.setImageBitmap(circle(bmp))
+        photo.visibility = View.VISIBLE
+    }
+
+    private fun circle(src: Bitmap): Bitmap {
+        val s = minOf(src.width, src.height)
+        val out = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888)
+        val c = Canvas(out)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.shader = BitmapShader(src, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        c.drawCircle(s / 2f, s / 2f, s / 2f, paint)
+        val border = Paint(Paint.ANTI_ALIAS_FLAG)
+        border.style = Paint.Style.STROKE
+        border.color = Color.WHITE
+        border.strokeWidth = s * 0.04f
+        c.drawCircle(s / 2f, s / 2f, s / 2f - s * 0.02f, border)
+        return out
     }
 
     // ---------- Mensajes en pantalla completa ----------

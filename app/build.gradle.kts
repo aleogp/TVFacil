@@ -11,8 +11,8 @@ android {
         applicationId = "com.andres.tvfacil"
         minSdk = 22
         targetSdk = 34
-        versionCode = 5
-        versionName = "5.0"
+        versionCode = 6
+        versionName = "6.0"
     }
 
     // Llave fija: así cada APK nuevo se instala encima del anterior sin desinstalar.
