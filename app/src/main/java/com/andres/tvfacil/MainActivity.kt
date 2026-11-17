@@ -185,6 +185,7 @@ class MainActivity : Activity() {
                     runApp(lb, retry = true)
                 }
             }
+            "barca" -> startActivityForResult(Intent(this, PartidoActivity::class.java), REQ_PARTIDO)
             "reboot" -> showMessage(
                 "🔄  Para reiniciar el Fire Stick:\n\n" +
                     "Mantengan apretados AL MISMO TIEMPO\n" +
@@ -264,6 +265,16 @@ class MainActivity : Activity() {
     @Deprecated("Activity API")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQ_PARTIDO) {
+            val pkg = data?.getStringExtra(PartidoActivity.EXTRA_PKG)
+            if (resultCode != RESULT_OK || pkg == null) return
+            // Usamos el botón que ya abre esa app (con su VPN); si no existe, Colombia
+            val idx = buttons.indexOfFirst { it.action == "app" && it.pkg == pkg }
+            val b = buttons.getOrNull(idx) ?: TvButton("Partido", "⚽", 0xFFA50044, "app", "colombia", pkg)
+            if (idx >= 0) Config.setLast(this, idx)
+            handler.post { runApp(b, false) }
+            return
+        }
         if (requestCode != REQ_VPN) return
         val b = buttons.getOrNull(pendingIndex)
         pendingIndex = -1
@@ -357,6 +368,7 @@ class MainActivity : Activity() {
 
     companion object {
         private const val REQ_VPN = 42
+        private const val REQ_PARTIDO = 43
     }
 
     private fun isLight(c: Int): Boolean {

@@ -9,6 +9,7 @@ import org.json.JSONObject
  *  action = "app"     -> pone la VPN indicada (o ninguna) y abre la app [pkg]
  *  action = "retry"   -> repite el último botón con más tiempo de espera
  *  action = "reboot"  -> muestra cómo reiniciar el Fire Stick con el control
+ *  action = "barca"   -> pantalla del próximo partido del Barça (lee partido.json)
  *  tunnel = nombre de la VPN = archivo assets/vpn/<nombre>.conf ("" = sin VPN)
  */
 data class TvButton(
@@ -39,10 +40,11 @@ object Config {
     val COLORS = linkedMapOf(
         "Azul" to 0xFF1E88E5, "Rojo" to 0xFFC62828, "Amarillo" to 0xFFF9A825,
         "Verde" to 0xFF2E7D32, "Naranja" to 0xFFEF6C00, "Morado" to 0xFF6A1B9A,
-        "Gris" to 0xFF546E7A, "Rosado" to 0xFFD81B60, "Celeste" to 0xFF00ACC1
+        "Gris" to 0xFF546E7A, "Rosado" to 0xFFD81B60, "Celeste" to 0xFF00ACC1, "Granate" to 0xFFA50044
     )
 
     fun defaults(): MutableList<TvButton> = mutableListOf(
+        TvButton("Partido del Barça", "🔵🔴", 0xFFA50044, "barca"),
         TvButton("Disney y Fútbol", "⚽", 0xFF1E88E5, "app", "colombia", "com.disney.disneyplus"),
         TvButton("Netflix", "🎬", 0xFFC62828, "app", "", "com.netflix.ninja"),
         TvButton("TV Colombia", "📺", 0xFFF9A825, "app", "colombia", "com.directv.dtvlatam"),
@@ -68,6 +70,14 @@ object Config {
             list.filter { it.pkg == "com.kai.tv" && it.tunnel == "mexico" }.forEach { it.tunnel = "usa" }
             save(ctx, list)
             p.edit().putBoolean("migr_kai_usa", true).apply()
+        }
+        // v4: botón "Partido del Barça" al principio (una sola vez)
+        if (!p.getBoolean("migr_barca", false)) {
+            if (list.none { it.action == "barca" }) {
+                list.add(0, TvButton("Partido del Barça", "🔵🔴", 0xFFA50044, "barca"))
+                save(ctx, list)
+            }
+            p.edit().putBoolean("migr_barca", true).apply()
         }
         return list
     }

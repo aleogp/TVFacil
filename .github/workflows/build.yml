@@ -3,6 +3,10 @@ name: Armar APK
 on:
   push:
     branches: [ main ]
+    # Cambios solo en partido.json NO arman un APK nuevo
+    paths-ignore:
+      - 'partido.json'
+      - 'LEEME.md'
   workflow_dispatch: {}
 
 permissions:
@@ -44,7 +48,7 @@ jobs:
       - name: Publicar versión descargable
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.${{ github.run_number }}
-          name: TV Fácil v3.${{ github.run_number }}
+          tag_name: v5.${{ github.run_number }}
+          name: TV Fácil v5.${{ github.run_number }}
           files: TVFacil.apk
           make_latest: true
