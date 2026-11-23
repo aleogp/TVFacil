@@ -1,17 +1,7 @@
 {
-  "actualizado": "2026-11-17T03:32:05+01:00",
+  "actualizado": "2026-11-23T07:24:49+01:00",
   "nota": "Lo actualiza una tarea programada de Claude. epoch = hora de inicio en segundos UTC. app = disney | dgo | (vacío si no se sabe).",
   "partidos": [
-    {
-      "epoch": 1795352400,
-      "inicio": "2026-11-22T14:00:00+01:00",
-      "rival": "Villarreal",
-      "local": true,
-      "competicion": "LaLiga",
-      "app": "dgo",
-      "canal": "DSports",
-      "fuente": "https://www.futbolenvivocolombia.com/equipo/fc-barcelona"
-    },
     {
       "epoch": 1795628700,
       "inicio": "2026-11-25T18:45:00+01:00",
@@ -27,6 +17,16 @@
       "inicio": "2026-11-29T16:15:00+01:00",
       "rival": "Deportivo",
       "local": false,
+      "competicion": "LaLiga",
+      "app": "",
+      "canal": "",
+      "fuente": ""
+    },
+    {
+      "epoch": 1796243400,
+      "inicio": "2026-12-02T21:30:00+01:00",
+      "rival": "Atlético de Madrid",
+      "local": true,
       "competicion": "LaLiga",
       "app": "",
       "canal": "",
