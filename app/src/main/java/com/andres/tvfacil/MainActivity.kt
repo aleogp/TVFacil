@@ -2,6 +2,7 @@ package com.andres.tvfacil
 
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageInstaller
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapShader
@@ -37,9 +38,11 @@ class MainActivity : Activity() {
     private var buttons: MutableList<TvButton> = mutableListOf()
     private val buttonViews = mutableListOf<View>()
 
-    private enum class Mode { NORMAL, BUSY, MESSAGE }
+    private enum class Mode { NORMAL, BUSY, MESSAGE, UPDATE }
     private var mode = Mode.NORMAL
     private var messageShownAt = 0L
+    private var pendingUpdate: Remote.Update? = null
+    private var checking = false
 
     // Código secreto: tecla Menú (≡) 5 veces seguidas abre la configuración.
     private var menuPresses = 0
@@ -91,12 +94,21 @@ class MainActivity : Activity() {
         overlay.visibility = View.GONE
         overlay.isClickable = true // en celular: tocar para cerrar mensajes
         overlay.setOnClickListener {
-            if (mode == Mode.MESSAGE && SystemClock.uptimeMillis() - messageShownAt > 1000) hideOverlay()
+            if (SystemClock.uptimeMillis() - messageShownAt > 1000) {
+                if (mode == Mode.MESSAGE) hideOverlay()
+                else if (mode == Mode.UPDATE) installUpdate()
+            }
         }
         root.addView(overlay, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
         setContentView(root)
+        handleInstallStatus(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleInstallStatus(intent)
     }
 
     override fun onResume() {
@@ -104,6 +116,85 @@ class MainActivity : Activity() {
         buttons = Config.load(this)
         buildGrid()
         showNextPhoto()
+        checkRemote()
+    }
+
+    // ---------- Configuración y actualizaciones desde GitHub ----------
+
+    /** En segundo plano: botones nuevos (config.json) y versión nueva del APK. */
+    private fun checkRemote() {
+        if (checking) return
+        checking = true
+        Thread {
+            val changed = Remote.syncConfig(this)
+            val upd = Remote.checkUpdate(this)
+            runOnUiThread {
+                checking = false
+                if (isFinishing) return@runOnUiThread
+                if (changed && mode == Mode.NORMAL) {
+                    buttons = Config.load(this)
+                    buildGrid()
+                }
+                if (upd != null && mode == Mode.NORMAL) offerUpdate(upd)
+            }
+        }.start()
+    }
+
+    private fun offerUpdate(u: Remote.Update) {
+        if (!Remote.canInstall(this)) return // falta el permiso: Andrés lo da desde la configuración
+        pendingUpdate = u
+        mode = Mode.UPDATE
+        messageShownAt = SystemClock.uptimeMillis()
+        showOverlay(
+            "🆕  Hay una versión nueva de TV Fácil\n\n" +
+                "Aprieten OK para instalarla.\n" +
+                "Luego, en la ventana que sale, elijan \"Instalar\".\n\n" +
+                "(Para dejarlo para mañana, aprieten la flecha ↩ Atrás)"
+        )
+    }
+
+    private fun installUpdate() {
+        val u = pendingUpdate ?: run { hideOverlay(); return }
+        pendingUpdate = null
+        mode = Mode.BUSY
+        showOverlay("⏳\n\nDescargando la versión nueva…\n\nEsperen un momento, no aprieten nada.")
+        Thread {
+            val ok = try { Remote.downloadAndInstall(this, u); true } catch (e: Exception) { false }
+            if (!ok) runOnUiThread {
+                hideOverlay()
+                showMessage("No se pudo descargar la versión nueva.\nNo pasa nada: TV Fácil sigue funcionando.\n\n(Aprieten OK para volver)")
+            }
+            // Si salió bien, Android responde en handleInstallStatus()
+        }.start()
+    }
+
+    private fun skipUpdate() {
+        pendingUpdate?.let { Remote.skip(this, it.tag) }
+        pendingUpdate = null
+        hideOverlay()
+    }
+
+    private fun handleInstallStatus(i: Intent?) {
+        if (i == null || i.action != Remote.ACTION_INSTALL_STATUS) return
+        setIntent(Intent(Intent.ACTION_MAIN))
+        val status = i.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+        when (status) {
+            PackageInstaller.STATUS_PENDING_USER_ACTION -> {
+                @Suppress("DEPRECATION")
+                val confirm = i.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
+                hideOverlay()
+                if (confirm != null) {
+                    confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    try { startActivity(confirm) } catch (_: Exception) { }
+                }
+            }
+            PackageInstaller.STATUS_SUCCESS -> hideOverlay()
+            PackageInstaller.STATUS_FAILURE_ABORTED -> hideOverlay() // eligieron "Cancelar"
+            else -> {
+                hideOverlay()
+                showMessage("No se pudo instalar la versión nueva.\nNo pasa nada: TV Fácil sigue funcionando.\n\n(Aprieten OK para volver)")
+            }
+        }
     }
 
     override fun onPause() {
@@ -400,6 +491,17 @@ class MainActivity : Activity() {
         }
         return when (mode) {
             Mode.BUSY -> true // mientras conecta, ignoramos todo
+            Mode.UPDATE -> {
+                if (event.action == KeyEvent.ACTION_UP &&
+                    SystemClock.uptimeMillis() - messageShownAt > 1000) {
+                    when (event.keyCode) {
+                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER,
+                        KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_A -> installUpdate()
+                        KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_ESCAPE -> skipUpdate()
+                    }
+                }
+                true
+            }
             Mode.MESSAGE -> {
                 // Esperamos 1 s para que un toque doble no lo cierre sin leerlo
                 if (event.action == KeyEvent.ACTION_UP &&

@@ -26,9 +26,23 @@ data class TvButton(
 
     companion object {
         fun fromJson(o: JSONObject) = TvButton(
-            o.optString("label"), o.optString("emoji"), o.optLong("color", 0xFF1565C0),
+            o.optString("label"), o.optString("emoji"), parseColor(o.opt("color")),
             o.optString("action", "app"), o.optString("tunnel"), o.optString("pkg")
         )
+
+        /** Acepta el número guardado (0xFF1E88E5) o texto "#1E88E5" (como en config.json). */
+        private fun parseColor(v: Any?): Long {
+            val def = 0xFF1565C0
+            return when (v) {
+                is Number -> v.toLong()
+                is String -> {
+                    val hex = v.trim().removePrefix("#")
+                    val n = hex.toLongOrNull(16) ?: return def
+                    if (hex.length <= 6) n or 0xFF000000 else n
+                }
+                else -> def
+            }
+        }
     }
 }
 

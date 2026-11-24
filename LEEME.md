@@ -44,6 +44,27 @@ Cada vez que cambies algo y lo subas, se arma una versión nueva que se instala 
 Ahí eliges qué app abre cada botón (DGO y KAI hay que elegirlas la primera vez), qué VPN usa, nombre,
 emoji, color y orden. También puedes agregar o borrar botones.
 
+## 5. Cambiar los botones desde el celular (config.json)
+Sin entrar a la tele: edita `config.json` en GitHub (se puede desde la app de GitHub o el navegador).
+1. Cambia lo que quieras en `botones` (nombre, emoji, color `#RRGGBB`, app, VPN, orden).
+2. **Sube el número de `version`** (1, 2, 3…). Si no lo subes, la tele no lo aplica.
+3. La tele lo aplica sola la próxima vez que abran TV Fácil (revisa como mucho cada 10 min).
+
+Con `version: 0` no se aplica nada. Lo que cambies a mano en la tele sigue funcionando hasta
+la siguiente versión de `config.json`. Para ver cómo está configurada la tele ahora:
+configuración escondida → "Ver configuración actual". Para aplicarlo al instante:
+"Traer botones de GitHub ahora". Cambiar `config.json` no arma un APK nuevo.
+
+## 6. Actualizaciones automáticas
+Cada vez que GitHub arma un APK nuevo, TV Fácil lo detecta (revisa cada 6 h) y muestra
+"Hay una versión nueva". Con OK la descarga y Android pide confirmar **Instalar**.
+Con ↩ Atrás no vuelve a preguntar hasta el día siguiente.
+
+**Una sola vez:** dar permiso para instalar apps a TV Fácil:
+*Ajustes → Mi Fire TV → Opciones para desarrolladores → Instalar apps desconocidas → TV Fácil → Activar*
+(o configuración escondida → "Buscar versión nueva", que abre el ajuste). Sin ese permiso no pregunta nada.
+La primera versión con esto (v7.N nueva) hay que instalarla a mano con Downloader como siempre.
+
 ## Notas
 - Instala AnyDesk en el Fire Stick para el botón "Llamar a Andrés".
 - El repositorio público expone la llave de firma; para una app familiar no es problema.

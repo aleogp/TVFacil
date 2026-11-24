@@ -11,8 +11,12 @@ android {
         applicationId = "com.andres.tvfacil"
         minSdk = 22
         targetSdk = 34
-        versionCode = 7
-        versionName = "7.0"
+        // La versión sale del número de compilación de GitHub Actions (igual que la etiqueta v7.N
+        // del Release), para que la app sepa si hay una más nueva. Si cambias el 7 aquí,
+        // cámbialo también en .github/workflows/build.yml (tag_name).
+        val run = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0
+        versionCode = 100 + run
+        versionName = "7.$run"
     }
 
     // Llave fija: así cada APK nuevo se instala encima del anterior sin desinstalar.

@@ -3,9 +3,10 @@ name: Armar APK
 on:
   push:
     branches: [ main ]
-    # Cambios solo en partido.json NO arman un APK nuevo
+    # Cambios solo en partido.json / config.json NO arman un APK nuevo
     paths-ignore:
       - 'partido.json'
+      - 'config.json'
       - 'LEEME.md'
   workflow_dispatch: {}
 
