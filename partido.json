@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-23T07:24:49+01:00",
+  "actualizado": "2026-11-24T07:19:47+01:00",
   "nota": "Lo actualiza una tarea programada de Claude. epoch = hora de inicio en segundos UTC. app = disney | dgo | (vacío si no se sabe).",
   "partidos": [
     {
@@ -18,9 +18,9 @@
       "rival": "Deportivo",
       "local": false,
       "competicion": "LaLiga",
-      "app": "",
-      "canal": "",
-      "fuente": ""
+      "app": "dgo",
+      "canal": "DSports",
+      "fuente": "https://www.futbolenvivocolombia.com/equipo/fc-barcelona"
     },
     {
       "epoch": 1796243400,
