@@ -68,3 +68,31 @@ La primera versión con esto (v7.N nueva) hay que instalarla a mano con Download
 ## Notas
 - Instala AnyDesk en el Fire Stick para el botón "Llamar a Andrés".
 - El repositorio público expone la llave de firma; para una app familiar no es problema.
+
+
+---
+
+# Historial de versiones
+
+## TV Fácil v7.14
+
+### Novedades
+- **Se actualiza sola:** cada 6 horas revisa si hay versión nueva. Si la hay, sale un aviso en la tele: OK para instalar, o Atrás para dejarlo para el día siguiente.
+- **Botones desde GitHub:** los botones (nombre, color, VPN, app) se pueden cambiar editando `config.json` (subiendo `version`), sin armar una app nueva. La tele lo aplica sola en unos minutos.
+- **30 fotos de la nieta** rotando arriba en la pantalla principal (cifradas; no se ven en GitHub).
+- **Configuración escondida** (Menú ≡ 5 veces) con tres opciones nuevas: traer los botones de GitHub, ver la configuración actual y buscar una versión nueva.
+
+### Lo que ya traía
+- Botones grandes de colores: Partido del Barça, Disney y Fútbol, Netflix, TV Colombia, Canales, No funciona, Llamar a Andrés y Reiniciar.
+- VPN integrada (Colombia, México, EE. UU.): cada botón pone la VPN correcta y abre la app que toca.
+- Partido del Barça: muestra el próximo partido y si lo dan por Disney o DGO. Se actualiza solo dos veces al día.
+- Bloqueo de IPv6 fuera de la VPN (desde la v7).
+- Si falta una app, abre la tienda de Amazon para instalarla.
+- Ícono con la foto de la nieta.
+
+### Pendiente
+- KAI sigue sin funcionar en casa de los papás. Queda por probar otros países de VPN.
+
+### Instalar
+- Primera vez: Downloader → código **8102941**, y permitir "Instalar apps desconocidas" para TV Fácil.
+- Después: se actualiza sola.
