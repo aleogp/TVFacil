@@ -18,7 +18,7 @@ android {
         versionCode = 100 + run
         versionName = "7.$run"
 
-        // Secretos de GitHub (vacíos si no están): aviso de ayuda (ntfy) y señal de vida (healthchecks.io)
+        // Secretos de GitHub (vacíos si no están): aviso de ayuda (ntfy, NTFY_TOPIC) y señal de vida (healthchecks.io, HC_PING_URL)
         val ntfy = (System.getenv("NTFY_TOPIC") ?: "").trim().replace("\"", "")
         val hc = (System.getenv("HC_PING_URL") ?: "").trim().replace("\"", "")
         buildConfigField("String", "NTFY_TOPIC", "\"$ntfy\"")

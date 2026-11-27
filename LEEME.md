@@ -96,3 +96,10 @@ La primera versión con esto (v7.N nueva) hay que instalarla a mano con Download
 ### Instalar
 - Primera vez: Downloader → código **8102941**, y permitir "Instalar apps desconocidas" para TV Fácil.
 - Después: se actualiza sola.
+
+## TV Fácil v8 (v7.15 en adelante)
+- **Reloj y clima** de Calonge arriba a la derecha.
+- **Mensajes y recordatorios**: barra amarilla abajo; los mensajes nuevos salen una vez en grande. Se editan en `mensajes.json` (no arma app nueva).
+- **Salvapantallas** con las fotos tras 3 min sin tocar el control (máximo 1 hora).
+- **"Llamar a Andrés"** avisa al celular por ntfy (secreto NTFY_TOPIC) y abre AnyDesk.
+- **Señal de vida**: la app avisa a healthchecks.io (secreto HC_PING_URL) cada hora mientras se usa; si pasan ~3 días sin uso, llega un correo.
