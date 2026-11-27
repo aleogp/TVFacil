@@ -52,6 +52,7 @@ class SetupActivity : Activity() {
                 "retry" -> "botón de reintento"
                 "reboot" -> "instrucciones para reiniciar"
                 "barca" -> "próximo partido (Disney o DGO)"
+                "ayuda" -> "avisa a Andrés y abre " + appName(b.pkg)
                 else -> "VPN: ${b.tunnel.ifBlank { "ninguna" }}  ·  App: ${appName(b.pkg)}"
             }
             rows.add("${i + 1}.  ${b.emoji}  ${b.label}      —  $detail")
@@ -182,7 +183,7 @@ class SetupActivity : Activity() {
     }
 
     private fun pickType(b: TvButton, i: Int) {
-        val keys = arrayOf("app", "retry", "reboot", "barca")
+        val keys = arrayOf("app", "retry", "reboot", "barca", "ayuda")
         AlertDialog.Builder(this).setTitle("Tipo de botón")
             .setItems(keys.map { tipo(it) }.toTypedArray()) { _, w -> b.action = keys[w]; saveAndReopen(i) }
             .show()
@@ -244,6 +245,7 @@ class SetupActivity : Activity() {
         "retry" -> "Reintentar (\"No funciona\")"
         "reboot" -> "Instrucciones para reiniciar"
         "barca" -> "Partido del Barça"
+        "ayuda" -> "Pedir ayuda (aviso + AnyDesk)"
         else -> "Abrir una app"
     }
 

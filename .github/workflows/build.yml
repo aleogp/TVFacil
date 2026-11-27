@@ -7,6 +7,7 @@ on:
     paths-ignore:
       - 'partido.json'
       - 'config.json'
+      - 'mensajes.json'
       - 'LEEME.md'
   workflow_dispatch: {}
 
@@ -53,6 +54,9 @@ jobs:
           fi
 
       - name: Compilar
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          HC_PING_URL: ${{ secrets.HC_PING_URL }}
         run: gradle :app:assembleRelease --no-daemon --stacktrace
 
       - name: Renombrar APK

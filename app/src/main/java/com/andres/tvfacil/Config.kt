@@ -9,6 +9,7 @@ import org.json.JSONObject
  *  action = "app"     -> pone la VPN indicada (o ninguna) y abre la app [pkg]
  *  action = "retry"   -> repite el último botón con más tiempo de espera
  *  action = "reboot"  -> muestra cómo reiniciar el Fire Stick con el control
+ *  action = "ayuda"   -> avisa al celular de Andrés (ntfy) y abre AnyDesk [pkg]
  *  action = "barca"   -> pantalla del próximo partido del Barça (lee partido.json)
  *  tunnel = nombre de la VPN = archivo assets/vpn/<nombre>.conf ("" = sin VPN)
  */
@@ -64,7 +65,7 @@ object Config {
         TvButton("TV Colombia", "📺", 0xFFF9A825, "app", "colombia", "com.directv.dtvlatam"),
         TvButton("Canales", "📡", 0xFF2E7D32, "app", "usa", "com.kai.tv"),
         TvButton("No funciona", "🔧", 0xFFEF6C00, "retry"),
-        TvButton("Llamar a Andrés", "📞", 0xFF6A1B9A, "app", "", "com.anydesk.anydeskandroid"),
+        TvButton("Llamar a Andrés", "📞", 0xFF6A1B9A, "ayuda", "", "com.anydesk.anydeskandroid"),
         TvButton("Reiniciar", "🔄", 0xFF546E7A, "reboot")
     )
 
@@ -84,6 +85,13 @@ object Config {
             list.filter { it.pkg == "com.kai.tv" && it.tunnel == "mexico" }.forEach { it.tunnel = "usa" }
             save(ctx, list)
             p.edit().putBoolean("migr_kai_usa", true).apply()
+        }
+        // v8: "Llamar a Andrés" ahora también le avisa al celular (una sola vez)
+        if (!p.getBoolean("migr_ayuda", false)) {
+            var cambio = false
+            list.filter { it.action == "app" && it.pkg == "com.anydesk.anydeskandroid" }.forEach { it.action = "ayuda"; cambio = true }
+            if (cambio) save(ctx, list)
+            p.edit().putBoolean("migr_ayuda", true).apply()
         }
         // v4: botón "Partido del Barça" al principio (una sola vez)
         if (!p.getBoolean("migr_barca", false)) {

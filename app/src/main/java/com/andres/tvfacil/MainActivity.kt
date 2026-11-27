@@ -35,10 +35,19 @@ class MainActivity : Activity() {
     private lateinit var grid: GridLayout
     private lateinit var overlay: TextView
     private lateinit var photo: ImageView
+    private lateinit var clockText: TextView
+    private lateinit var infoText: TextView
+    private lateinit var barra: TextView
+    private lateinit var saver: FrameLayout
+    private lateinit var saverPhoto: ImageView
+    private lateinit var saverClock: TextView
+    private var resumed = false
+    private var saverIndex = 0
+    private var saverStartedAt = 0L
     private var buttons: MutableList<TvButton> = mutableListOf()
     private val buttonViews = mutableListOf<View>()
 
-    private enum class Mode { NORMAL, BUSY, MESSAGE, UPDATE }
+    private enum class Mode { NORMAL, BUSY, MESSAGE, UPDATE, SAVER }
     private var mode = Mode.NORMAL
     private var messageShownAt = 0L
     private var pendingUpdate: Remote.Update? = null
@@ -62,27 +71,80 @@ class MainActivity : Activity() {
         title.setTextColor(Color.WHITE)
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 34f)
         title.typeface = Typeface.DEFAULT_BOLD
-        title.gravity = Gravity.CENTER
+        title.gravity = Gravity.CENTER_VERTICAL
         // En celular (sin tecla Menú): mantener presionado el título abre la configuración.
         title.setOnLongClickListener { openSetup(); true }
 
         // Encabezado: foto de la nieta (rota en cada visita) + título
         val header = LinearLayout(this)
         header.orientation = LinearLayout.HORIZONTAL
-        header.gravity = Gravity.CENTER
-        header.setPadding(0, dp(12), 0, dp(6))
+        header.gravity = Gravity.CENTER_VERTICAL
+        header.setPadding(dp(32), dp(12), dp(32), dp(6))
         photo = ImageView(this)
         photo.visibility = View.GONE
         val plp = LinearLayout.LayoutParams(dp(88), dp(88))
         plp.rightMargin = dp(20)
         header.addView(photo, plp)
-        header.addView(title)
-        column.addView(header)
+        header.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+
+        // Reloj, fecha y clima a la derecha
+        val clockBox = LinearLayout(this)
+        clockBox.orientation = LinearLayout.VERTICAL
+        clockBox.gravity = Gravity.END
+        clockText = TextView(this)
+        clockText.setTextColor(Color.WHITE)
+        clockText.typeface = Typeface.DEFAULT_BOLD
+        clockText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 40f)
+        clockText.gravity = Gravity.END
+        infoText = TextView(this)
+        infoText.setTextColor(0xFFCFD8DC.toInt())
+        infoText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+        infoText.gravity = Gravity.END
+        clockBox.addView(clockText)
+        clockBox.addView(infoText)
+        header.addView(clockBox)
+        column.addView(header, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         grid = GridLayout(this)
         column.addView(grid, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         root.addView(column, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+
+        barra = TextView(this)
+        barra.setBackgroundColor(0xFFFFE082.toInt())
+        barra.setTextColor(0xFF1B1B1B.toInt())
+        barra.typeface = Typeface.DEFAULT_BOLD
+        barra.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
+        barra.gravity = Gravity.CENTER
+        barra.maxLines = 2
+        barra.setPadding(dp(24), dp(10), dp(24), dp(10))
+        barra.visibility = View.GONE
+        root.addView(barra, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
+
+        // Salvapantallas: fotos grandes + reloj, cuando nadie toca el control
+        saver = FrameLayout(this)
+        saver.setBackgroundColor(Color.BLACK)
+        saver.visibility = View.GONE
+        saverPhoto = ImageView(this)
+        saverPhoto.scaleType = ImageView.ScaleType.FIT_CENTER
+        val sh = (resources.displayMetrics.heightPixels * 0.78).toInt()
+        saver.addView(saverPhoto, FrameLayout.LayoutParams(sh, sh, Gravity.CENTER_VERTICAL or Gravity.START).apply {
+            leftMargin = dp(60)
+        })
+        saverClock = TextView(this)
+        saverClock.setTextColor(Color.WHITE)
+        saverClock.typeface = Typeface.DEFAULT_BOLD
+        saverClock.setTextSize(TypedValue.COMPLEX_UNIT_SP, 44f)
+        saverClock.gravity = Gravity.CENTER
+        saver.addView(saverClock, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+            Gravity.CENTER_VERTICAL or Gravity.END).apply { rightMargin = dp(70) })
+        saver.isClickable = true
+        saver.setOnClickListener { stopSaver() }
+        root.addView(saver, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
         overlay = TextView(this)
@@ -113,9 +175,13 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        resumed = true
         buttons = Config.load(this)
+        updateBarra()
         buildGrid()
         showNextPhoto()
+        tick.run()
+        resetIdle()
         checkRemote()
     }
 
@@ -128,14 +194,21 @@ class MainActivity : Activity() {
         Thread {
             val changed = Remote.syncConfig(this)
             val upd = Remote.checkUpdate(this)
+            Extras.senalDeVida(this)
+            Extras.syncMensajes(this)
+            Extras.syncClima(this)
             runOnUiThread {
                 checking = false
                 if (isFinishing) return@runOnUiThread
-                if (changed && mode == Mode.NORMAL) {
+                val barraAntes = barra.visibility
+                updateBarra()
+                updateClock()
+                if ((changed || barra.visibility != barraAntes) && mode == Mode.NORMAL) {
                     buttons = Config.load(this)
                     buildGrid()
                 }
                 if (upd != null && mode == Mode.NORMAL) offerUpdate(upd)
+                else if (mode == Mode.NORMAL) showNewMessages()
             }
         }.start()
     }
@@ -199,6 +272,11 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         super.onPause()
+        resumed = false
+        handler.removeCallbacks(tick)
+        handler.removeCallbacks(idleRunnable)
+        handler.removeCallbacks(saverStep)
+        if (mode == Mode.SAVER) stopSaver()
         // Si salen de la app mientras conecta, no dejamos tareas pendientes a medias.
         if (mode == Mode.MESSAGE) hideOverlay()
     }
@@ -220,7 +298,7 @@ class MainActivity : Activity() {
         val dm = resources.displayMetrics
         val margin = dp(12)
         val usableW = dm.widthPixels - dp(40)
-        val usableH = dm.heightPixels - dp(110)
+        val usableH = dm.heightPixels - dp(120) - (if (barra.visibility == View.VISIBLE) dp(80) else 0)
         val w = usableW / cols - 2 * margin
         val h = minOf(usableH / rows - 2 * margin, (w * 0.8).toInt())
 
@@ -296,6 +374,7 @@ class MainActivity : Activity() {
                     runApp(lb, retry = true)
                 }
             }
+            "ayuda" -> pedirAyuda(b)
             "barca" -> startActivityForResult(Intent(this, PartidoActivity::class.java), REQ_PARTIDO)
             "reboot" -> showMessage(
                 "🔄  Para reiniciar el Fire Stick:\n\n" +
@@ -482,6 +561,11 @@ class MainActivity : Activity() {
     // ---------- Teclas del control ----------
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        resetIdle()
+        if (mode == Mode.SAVER) {
+            if (event.action == KeyEvent.ACTION_UP) stopSaver()
+            return true
+        }
         if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_MENU) {
             val now = SystemClock.uptimeMillis()
             if (now - firstMenuAt > 4000) { firstMenuAt = now; menuPresses = 0 }
@@ -509,12 +593,142 @@ class MainActivity : Activity() {
                 true
             }
             Mode.NORMAL -> super.dispatchKeyEvent(event)
+            Mode.SAVER -> true
         }
     }
 
     override fun onBackPressed() {
         if (mode != Mode.NORMAL) return
         super.onBackPressed()
+    }
+
+    // ---------- Reloj, mensajes y clima ----------
+
+    private val tick = object : Runnable {
+        override fun run() {
+            updateClock()
+            handler.postDelayed(this, 20_000)
+        }
+    }
+
+    private fun updateClock() {
+        clockText.text = Extras.hora()
+        val clima = Extras.clima(this)
+        infoText.text = Extras.fechaLarga() + if (clima.isNotEmpty()) "  ·  $clima ${Extras.CIUDAD}" else ""
+        if (mode == Mode.SAVER) {
+            saverClock.text = Extras.hora() + "\n" + Extras.fechaLarga().replace(" de ", "\nde ") +
+                (if (clima.isNotEmpty()) "\n\n$clima" else "")
+        }
+    }
+
+    private fun updateBarra() {
+        val lineas = Extras.lineasBarra(this)
+        if (lineas.isEmpty()) {
+            barra.visibility = View.GONE
+        } else {
+            barra.text = lineas.take(3).joinToString("     ")
+            barra.visibility = View.VISIBLE
+        }
+    }
+
+    /** Mensajes nuevos de Andrés: se muestran una vez en grande. */
+    private fun showNewMessages() {
+        val nuevos = Extras.mensajesNuevos(this)
+        if (nuevos.isEmpty()) return
+        Extras.marcarVistos(this, nuevos.map { it.first })
+        val texto = nuevos.joinToString("\n\n") { it.second }
+        showMessage("📩  Mensaje de Andrés\n\n$texto\n\n(Aprieten OK para cerrar)")
+    }
+
+    // ---------- Botón de ayuda ----------
+
+    private fun pedirAyuda(b: TvButton) {
+        mode = Mode.BUSY
+        showOverlay("📞\n\nAvisando a Andrés…")
+        Thread {
+            val ok = Extras.pedirAyuda()
+            runOnUiThread {
+                showOverlay(
+                    if (ok) "✅  Ya le avisamos a Andrés.\n\nAhora se abre AnyDesk:\ndéjenlo abierto, él se va a conectar."
+                    else "No pude avisarle por internet.\nLlámenlo por teléfono 📞\n\nAhora se abre AnyDesk."
+                )
+                handler.postDelayed({
+                    hideOverlay()
+                    if (b.pkg.isNotBlank() && !launch(b.pkg) && !openStore(b.pkg)) {
+                        showMessage("No encuentro AnyDesk.\n\n(Aprieten OK para volver)")
+                    }
+                }, 4000)
+            }
+        }.start()
+    }
+
+    // ---------- Salvapantallas con fotos ----------
+
+    private val idleRunnable = Runnable { startSaver() }
+
+    private fun resetIdle() {
+        handler.removeCallbacks(idleRunnable)
+        if (resumed) handler.postDelayed(idleRunnable, SAVER_AFTER)
+    }
+
+    private fun photoFiles(): List<String> = try {
+        (assets.list("fotos") ?: emptyArray()).filter { it.endsWith(".jpg") || it.endsWith(".png") }.sorted()
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    private fun startSaver() {
+        if (!resumed || mode != Mode.NORMAL || photoFiles().isEmpty()) return
+        mode = Mode.SAVER
+        saverStartedAt = SystemClock.uptimeMillis()
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        saverIndex = (Math.random() * photoFiles().size).toInt()
+        saver.alpha = 0f
+        saver.visibility = View.VISIBLE
+        saver.animate().alpha(1f).setDuration(800).start()
+        saverStep.run()
+    }
+
+    private val saverStep = object : Runnable {
+        override fun run() {
+            if (mode != Mode.SAVER) return
+            // Después de 1 hora dejamos que el Fire TV se apague solo
+            if (SystemClock.uptimeMillis() - saverStartedAt > SAVER_MAX) { stopSaver(); return }
+            val files = photoFiles()
+            if (files.isEmpty()) { stopSaver(); return }
+            saverIndex = (saverIndex + 1) % files.size
+            val bmp = try {
+                assets.open("fotos/" + files[saverIndex]).use { BitmapFactory.decodeStream(it) }
+            } catch (_: Exception) { null }
+            if (bmp != null) {
+                saverPhoto.animate().alpha(0f).setDuration(400).withEndAction {
+                    saverPhoto.setImageBitmap(roundCorners(bmp))
+                    saverPhoto.animate().alpha(1f).setDuration(600).start()
+                }.start()
+            }
+            updateClock()
+            handler.postDelayed(this, 9_000)
+        }
+    }
+
+    private fun stopSaver() {
+        handler.removeCallbacks(saverStep)
+        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        saver.visibility = View.GONE
+        if (mode == Mode.SAVER) mode = Mode.NORMAL
+        resetIdle()
+        val last = Config.getLast(this)
+        buttonViews.getOrNull(if (last in buttonViews.indices) last else 0)?.requestFocus()
+    }
+
+    private fun roundCorners(src: Bitmap): Bitmap {
+        val out = Bitmap.createBitmap(src.width, src.height, Bitmap.Config.ARGB_8888)
+        val c = Canvas(out)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.shader = BitmapShader(src, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        val r = src.width * 0.06f
+        c.drawRoundRect(android.graphics.RectF(0f, 0f, src.width.toFloat(), src.height.toFloat()), r, r, paint)
+        return out
     }
 
     // ---------- Varios ----------
@@ -527,6 +741,8 @@ class MainActivity : Activity() {
     companion object {
         private const val REQ_VPN = 42
         private const val REQ_PARTIDO = 43
+        private const val SAVER_AFTER = 3 * 60_000L   // salvapantallas tras 3 min sin tocar
+        private const val SAVER_MAX = 60 * 60_000L    // y como mucho 1 hora
     }
 
     private fun isLight(c: Int): Boolean {

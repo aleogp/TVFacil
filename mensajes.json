@@ -1,0 +1,10 @@
+{
+  "nota": "Mensajes y recordatorios para la tele de los papás. Los cambios llegan en unos minutos (no arma app nueva). mensajes: salen en la barra amarilla y, la primera vez, en grande; 'desde'/'hasta' son opcionales (AAAA-MM-DD); cada mensaje necesita un 'id' distinto para salir en grande. recordatorios: salen en la barra el día antes y el mismo día; usa 'fecha' (AAAA-MM-DD) o 'cada_anio' (MM-DD) para cumpleaños; 'hora' opcional.",
+  "mensajes": [
+    {"id": "bienvenida-reloj", "texto": "¡Hola! Ahora la tele tiene reloj, clima, fotos y mis mensajes. Los quiero mucho ❤️ Andrés", "desde": "2026-11-27", "hasta": "2026-11-30"}
+  ],
+  "recordatorios": [
+    {"cada_anio": "12-24", "texto": "Nochebuena 🎄"},
+    {"cada_anio": "12-31", "texto": "Fin de año 🎉"}
+  ]
+}

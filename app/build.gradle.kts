@@ -17,6 +17,12 @@ android {
         val run = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0
         versionCode = 100 + run
         versionName = "7.$run"
+
+        // Secretos de GitHub (vacíos si no están): aviso de ayuda (ntfy) y señal de vida (healthchecks.io)
+        val ntfy = (System.getenv("NTFY_TOPIC") ?: "").trim().replace("\"", "")
+        val hc = (System.getenv("HC_PING_URL") ?: "").trim().replace("\"", "")
+        buildConfigField("String", "NTFY_TOPIC", "\"$ntfy\"")
+        buildConfigField("String", "HC_PING_URL", "\"$hc\"")
     }
 
     // Llave fija: así cada APK nuevo se instala encima del anterior sin desinstalar.
@@ -37,6 +43,10 @@ android {
             isMinifyEnabled = false
             signingConfig = signingConfigs.getByName("fija")
         }
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     compileOptions {
