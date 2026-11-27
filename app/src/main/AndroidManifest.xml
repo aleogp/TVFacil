@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Para listar las apps instaladas en la pantalla de configuración -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <!-- Para actualizarse sola desde GitHub Releases (Android pide confirmar "Instalar") -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />

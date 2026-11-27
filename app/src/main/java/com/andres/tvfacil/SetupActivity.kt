@@ -24,6 +24,9 @@ class SetupActivity : Activity() {
         "🔐  Aceptar permiso de VPN (una sola vez)",
         "🛡  Ver qué VPN trae la app",
         "↩  Restaurar botones originales",
+        "☁  Traer botones de GitHub ahora (config.json)",
+        "📋  Ver configuración actual (formato config.json)",
+        "🆕  Buscar versión nueva de TV Fácil",
         "✅  Listo (volver)"
     )
 
@@ -87,9 +90,56 @@ class SetupActivity : Activity() {
                     .show()
             }
             3 -> confirm("¿Volver a los botones originales?") { Config.reset(this); refresh() }
-            4 -> finish()
+            4 -> Thread {
+                val changed = Remote.syncConfig(this, force = true)
+                runOnUiThread {
+                    toast(if (changed) "Botones actualizados desde GitHub ✔"
+                    else "Sin cambios (config.json versión ${Remote.appliedConfigVersion(this)} ya aplicada, o no se pudo leer)")
+                    refresh()
+                }
+            }.start()
+            5 -> AlertDialog.Builder(this)
+                .setTitle("config.json (versión aplicada: ${Remote.appliedConfigVersion(this)})")
+                .setMessage(Remote.configJson(buttons, Remote.appliedConfigVersion(this)))
+                .setPositiveButton("OK", null)
+                .show()
+            6 -> checkUpdateNow()
+            7 -> finish()
             else -> editButton(pos - headerRows.size)
         }
+    }
+
+    private fun checkUpdateNow() {
+        if (!Remote.canInstall(this)) {
+            AlertDialog.Builder(this)
+                .setTitle("Falta un permiso")
+                .setMessage("Para actualizarse sola, TV Fácil necesita permiso para instalar apps.\n\n" +
+                    "Si no se abre solo: Ajustes → Mi Fire TV → Opciones para desarrolladores → " +
+                    "Instalar apps desconocidas → TV Fácil → Activar.")
+                .setPositiveButton("Abrir ajuste") { _, _ ->
+                    if (!Remote.openInstallPermission(this)) toast("No se pudo abrir; hazlo a mano (ver arriba)")
+                }
+                .setNegativeButton("Cerrar", null)
+                .show()
+            return
+        }
+        toast("Buscando…")
+        Thread {
+            val u = Remote.checkUpdate(this, force = true)
+            runOnUiThread {
+                if (u == null) {
+                    toast("Ya tiene la última versión (${Remote.currentVersion(this)}) o no se pudo consultar")
+                } else {
+                    confirm("Hay una versión nueva: ${u.tag}\n(instalada: ${Remote.currentVersion(this)})\n\n¿Instalarla ahora?") {
+                        toast("Descargando…")
+                        Thread {
+                            val ok = try { Remote.downloadAndInstall(this, u); true } catch (e: Exception) { false }
+                            if (!ok) runOnUiThread { toast("No se pudo descargar") }
+                        }.start()
+                    }
+                }
+            }
+        }.start()
     }
 
     private fun editButton(i: Int) {

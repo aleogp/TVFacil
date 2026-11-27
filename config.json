@@ -1,0 +1,14 @@
+{
+  "version": 0,
+  "nota": "Botones de TV Fácil. Para cambiarlos en la tele: edita los botones y SUBE 'version' (1, 2, 3...). La tele lo aplica en unos minutos. Con version 0 no se aplica nada. color = #RRGGBB. action = app | retry | reboot | barca. tunnel = colombia | mexico | usa | (vacío = sin VPN). pkg = paquete de la app.",
+  "botones": [
+    {"label": "Partido del Barça", "emoji": "🔵🔴", "color": "#A50044", "action": "barca", "tunnel": "", "pkg": ""},
+    {"label": "Disney y Fútbol", "emoji": "⚽", "color": "#1E88E5", "action": "app", "tunnel": "colombia", "pkg": "com.disney.disneyplus"},
+    {"label": "Netflix", "emoji": "🎬", "color": "#C62828", "action": "app", "tunnel": "", "pkg": "com.netflix.ninja"},
+    {"label": "TV Colombia", "emoji": "📺", "color": "#F9A825", "action": "app", "tunnel": "colombia", "pkg": "com.directv.dtvlatam"},
+    {"label": "Canales", "emoji": "📡", "color": "#2E7D32", "action": "app", "tunnel": "usa", "pkg": "com.kai.tv"},
+    {"label": "No funciona", "emoji": "🔧", "color": "#EF6C00", "action": "retry", "tunnel": "", "pkg": ""},
+    {"label": "Llamar a Andrés", "emoji": "📞", "color": "#6A1B9A", "action": "app", "tunnel": "", "pkg": "com.anydesk.anydeskandroid"},
+    {"label": "Reiniciar", "emoji": "🔄", "color": "#546E7A", "action": "reboot", "tunnel": "", "pkg": ""}
+  ]
+}
